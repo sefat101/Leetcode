@@ -1,0 +1,76 @@
+class Solution {
+public:
+    // Main function to determine if we can finish all courses given their prerequisites
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        
+        // Step 1: Build an adjacency list representation of the graph.
+        // Each course points to its prerequisites, creating a dependency graph.
+        vector<int> adjList[numCourses];
+        
+        // Loop through each prerequisite pair and populate the adjacency list
+        for(int i = 0; i < prerequisites.size(); i++) {
+            // prerequisites[i][0] depends on prerequisites[i][1]
+            // So we add prerequisites[i][1] as a prerequisite for prerequisites[i][0]
+            adjList[prerequisites[i][0]].push_back(prerequisites[i][1]); // putting value of pre course in the index
+        }
+        
+        // Step 2: Initialize visited vectors to track visited nodes.
+        // global_visited tracks all courses that have been visited across all DFS calls.
+        vector<int> global_visited(numCourses, 0);
+        
+        // current_visited keeps track of nodes that are part of the current DFS path.
+        // This helps in detecting cycles by marking nodes currently being processed.
+        vector<int> current_visited(numCourses, 0);
+        
+        // Flag to keep track of cycle detection
+        bool cyclePresent = false;
+
+        // Step 3: Perform DFS on each course to check for cycles in the dependency graph
+        for(int i = 0; i < numCourses; i++) {
+            // Only start DFS if the course has not been visited globally
+            if(!global_visited[i]) {
+                // If a cycle is detected starting from course `i`, set cyclePresent to true and stop
+                if(cycleDetection(adjList, i, global_visited, current_visited)) {
+                    cyclePresent = true;
+                    break;  // No need to check further if a cycle is found
+                }
+            }
+        }
+        
+        // Step 4: If there's a cycle, we cannot finish all courses
+        // Return true if no cycle is found, false if a cycle is found
+        return !cyclePresent;
+    }
+    
+    // Helper function to detect cycles using Depth-First Search (DFS)
+    // This function returns true if a cycle is detected starting from `curr`
+    bool cycleDetection(vector<int> adjList[], int curr, vector<int> &global_visited, vector<int> &current_visited) {
+        // Mark the current course as visited globally (for the entire graph)
+        global_visited[curr] = 1;
+        
+        // Mark the current course as visited in the current path
+        current_visited[curr] = 1;
+        
+        // Explore all prerequisites (neighbors) of the current course
+        for(auto k : adjList[curr]) {
+            // If neighbor `k` has not been visited globally, perform DFS on it
+            if(!global_visited[k]) {
+                // Recursive DFS call; if a cycle is found in deeper recursion, return true
+                if(cycleDetection(adjList, k, global_visited, current_visited)) return true;
+            } else {
+                // If `k` is already visited in the current path, it indicates a cycle
+                if(current_visited[k]) {
+                    return true;  // Cycle detected
+                }
+            }
+        }
+        
+        // Unmark the current course in the current path after finishing its DFS
+        // This is necessary to reset for other paths that may check this node
+        current_visited[curr] = 0;
+        
+        // If no cycle is detected, return false
+        return false;
+    }
+};
+
